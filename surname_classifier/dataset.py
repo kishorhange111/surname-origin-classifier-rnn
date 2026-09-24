@@ -1,17 +1,17 @@
-from io import open
+"""PyTorch Dataset for the surnames data: one text file per language, one surname per line."""
 import glob
 import os
-import time
-from torch.utils.data import Dataset
+
 import torch
-from preprocessing import line_to_tensor, unicode_to_ascii
+from torch.utils.data import Dataset
+
+from .preprocessing import line_to_tensor, unicode_to_ascii
 
 
 class SurnamesDataset(Dataset):
 
     def __init__(self, data_dir):
         self.data_dir = data_dir
-        self.load_time = time.localtime
         labels_set = set()
 
         self.data = []
@@ -30,7 +30,9 @@ class SurnamesDataset(Dataset):
                 self.data_tensors.append(line_to_tensor(clean_name))
                 self.labels.append(label)
 
-        self.labels_uniq = list(labels_set)
+        # sorted(): a plain list(set) gives a different order on every Python run, which would silently
+        # scramble the mapping between output neurons and language names after retraining.
+        self.labels_uniq = sorted(labels_set)
         for idx in range(len(self.labels)):
             temp_tensor = torch.tensor([self.labels_uniq.index(self.labels[idx])], dtype=torch.long)
             self.labels_tensors.append(temp_tensor)
@@ -39,9 +41,4 @@ class SurnamesDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        data_item = self.data[idx]
-        data_label = self.labels[idx]
-        data_tensor = self.data_tensors[idx]
-        label_tensor = self.labels_tensors[idx]
-
-        return label_tensor, data_tensor, data_label, data_item
+        return self.labels_tensors[idx], self.data_tensors[idx], self.labels[idx], self.data[idx]

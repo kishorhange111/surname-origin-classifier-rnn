@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+# training data (see data/README.md)
+data/names/
+data.zip

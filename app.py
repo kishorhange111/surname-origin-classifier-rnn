@@ -1,26 +1,36 @@
+"""Streamlit app: type a surname, get the language it most likely comes from."""
+import json
+import os
+
 import streamlit as st
 import torch
-import os
-from preprocessing import line_to_tensor, unicode_to_ascii, label_from_output, alldata
 
-model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"model")
-torch.classes.__path__ = []
+from surname_classifier import LABELS, label_from_output, line_to_tensor, unicode_to_ascii
+
+MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+torch.classes.__path__ = []  # avoids a Streamlit file-watcher crash with torch.classes
+
+
+@st.cache_resource
+def load_model():
+    """Load the TorchScript model (and its label order, if saved by train.py) once per server."""
+    model = torch.jit.load(os.path.join(MODELS_DIR, "CharRNN_scripted.pt"))
+    model.eval()
+    labels_file = os.path.join(MODELS_DIR, "labels.json")
+    labels = json.load(open(labels_file)) if os.path.exists(labels_file) else LABELS
+    return model, labels
 
 
 st.title("Surname Classifier")
-
 text_input = st.text_input("Enter your Surname 👇")
 
 if text_input:
     st.write("Entered Surname: ", text_input)
-    model = torch.jit.load(os.path.join(model_path,'CharRNN_scripted.pt'))
-    model.eval()
-    input_line = line_to_tensor(unicode_to_ascii(text_input))
-    output = model(input_line)
-    country = label_from_output(output, alldata)[0]
-    st.write("Your Surname is similar to : ", country , " Surnames.")
-
-
+    model, labels = load_model()
+    with torch.no_grad():
+        output = model(line_to_tensor(unicode_to_ascii(text_input)))
+    country = label_from_output(output, labels)[0]
+    st.write("Your Surname is similar to : ", country, " Surnames.")
 
 st.markdown(
     """
