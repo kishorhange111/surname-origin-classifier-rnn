@@ -3,7 +3,7 @@
 Type a surname and the model predicts which of **18 languages** it most likely comes from — e.g. *Nakamura → Japanese*, *Rossi → Italian*. A character-level recurrent neural network trained in PyTorch, exported with **TorchScript** and served through a **Streamlit** web app.
 
 ## How it works
-1. **Preprocessing** — each surname is normalised to plain ASCII (accents stripped: *Müller → muller*) and one-hot encoded one character at a time → a `(length, 1, 58)` tensor.
+1. **Preprocessing** — each surname is normalised to plain ASCII (accents stripped: *Müller → muller*) and one-hot encoded one character at a time over a 32-symbol vocabulary (a–z, space, `.,;'` and `_` for unknown characters) → a `(length, 1, 32)` tensor.
 2. **Model** — a single-layer RNN (hidden size 256) reads the name letter by letter; its final hidden state goes through two linear layers and a LogSoftmax over the 18 languages.
 3. **Training** — ~20k names, 85/15 train/validation split (seeded), mini-batches of 64, SGD (lr 0.15) with gradient clipping, NLL loss, 27 epochs. Evaluation prints a per-language confusion matrix and overall validation accuracy.
 4. **Deployment** — the trained model is exported with `torch.jit.script`, so the app loads it without the Python class definitions and runs inference in milliseconds on CPU.
