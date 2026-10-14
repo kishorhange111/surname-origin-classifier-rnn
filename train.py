@@ -1,4 +1,12 @@
-"""Train, evaluate and export the character-level RNN surname classifier.
+"""
+Train, evaluate and export the character-level RNN surname classifier.
+
+Pipeline:
+  1. load every surname from data/names/<Language>.txt (SurnamesDataset)
+  2. split 85/15 into train / validation with a fixed seed
+  3. train CharRNN with mini-batch SGD + gradient clipping (train)
+  4. print a per-language confusion matrix and the validation accuracy (evaluate)
+  5. export the weights, a TorchScript model for the app, and the label order
 
 Usage:  python train.py [--data data/names] [--epochs 27]
 Writes models/CharRNN.pt (weights), models/CharRNN_scripted.pt (TorchScript, used by app.py)
@@ -22,8 +30,28 @@ MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
 
 
 def train(model, training_data, n_epoch=10, n_batch_size=64, report_every=50, learning_rate=0.2,
-          criterion=nn.NLLLoss()):
-    """Mini-batch SGD with gradient clipping; returns the average loss per epoch."""
+          criterion=None):
+    """Mini-batch SGD with gradient clipping.
+
+    Names have different lengths, so instead of padding them into one tensor
+    each name in a batch is run separately and the losses are summed; one
+    optimizer step is taken per batch.
+
+    Args:
+        model: the CharRNN to train (updated in place).
+        training_data: indexable dataset of (label_tensor, name_tensor, label, name).
+        n_epoch: passes over the data.
+        n_batch_size: names per optimizer step (approximate: np.array_split
+            makes len(data) // n_batch_size nearly equal batches).
+        report_every: print the loss every this many epochs.
+        learning_rate: SGD step size.
+        criterion: loss on log-probabilities; defaults to NLLLoss, which pairs with LogSoftmax.
+
+    Returns:
+        List with the average per-name loss of each epoch.
+    """
+    if criterion is None:
+        criterion = nn.NLLLoss()
     current_loss = 0
     all_losses = []
     model.train()
@@ -32,6 +60,7 @@ def train(model, training_data, n_epoch=10, n_batch_size=64, report_every=50, le
 
     for epoch in range(1, n_epoch + 1):
         model.zero_grad()
+        # Shuffle example indices, then cut them into nearly equal batches.
         batches = list(range(len(training_data)))
         random.shuffle(batches)
         batches = np.array_split(batches, len(batches) // n_batch_size)
@@ -43,10 +72,11 @@ def train(model, training_data, n_epoch=10, n_batch_size=64, report_every=50, le
                 output = model.forward(text_tensor)
                 batch_loss += criterion(output, label_tensor)
             batch_loss.backward()
+            # RNNs are prone to exploding gradients on long sequences; cap the gradient norm.
             nn.utils.clip_grad_norm_(model.parameters(), 3)
             optimizer.step()
             optimizer.zero_grad()
-            current_loss += batch_loss.item() / len(batch)
+            current_loss += batch_loss.item() / len(batch)  # per-name average, for reporting
 
         all_losses.append(current_loss / len(batches))
         if epoch % report_every == 0:
@@ -56,7 +86,19 @@ def train(model, training_data, n_epoch=10, n_batch_size=64, report_every=50, le
 
 
 def evaluate(model, testing_data, classes):
-    """Row-normalised confusion matrix and overall accuracy on held-out data."""
+    """Row-normalised confusion matrix and overall accuracy on held-out data.
+
+    confusion[i][j] counts names of language i predicted as language j; after
+    normalising each row, the diagonal is the per-language recall.
+
+    Args:
+        model: the trained model.
+        testing_data: dataset of (label_tensor, name_tensor, label, name).
+        classes: language names in output-unit order.
+
+    Returns:
+        Overall accuracy (fraction of names classified correctly).
+    """
     confusion = torch.zeros(len(classes), len(classes))
     model.eval()
     with torch.no_grad():
@@ -64,7 +106,7 @@ def evaluate(model, testing_data, classes):
             _, text_tensor, label, _ = testing_data[i]
             _, guess_i = label_from_output(model(text_tensor), classes)
             confusion[classes.index(label)][guess_i] += 1
-    accuracy = (confusion.diag().sum() / confusion.sum()).item()
+    accuracy = (confusion.diag().sum() / confusion.sum()).item()  # computed before row-normalising
     for i in range(len(classes)):
         if confusion[i].sum() > 0:
             confusion[i] = confusion[i] / confusion[i].sum()
@@ -74,17 +116,19 @@ def evaluate(model, testing_data, classes):
 
 
 def main():
+    """Parse arguments, then load data, train, evaluate and export the model."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", default="data/names", help="folder with one <Language>.txt file per language")
     parser.add_argument("--epochs", type=int, default=27)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    torch.set_default_device(device)
+    torch.set_default_device(device)  # every tensor created from here on lives on this device
     print(f"Using device = {torch.get_default_device()}")
 
     alldata = SurnamesDataset(args.data)
     print(f"loaded {len(alldata)} items of data")
+    # Seeded split: the same names land in validation on every run, so results are comparable.
     train_set, test_set = torch.utils.data.random_split(
         alldata, [.85, .15], generator=torch.Generator(device=device).manual_seed(2024))
     print(f"train examples = {len(train_set)}, validation examples = {len(test_set)}")
@@ -100,9 +144,11 @@ def main():
     # Export: weights, TorchScript model for the app, and the label order.
     os.makedirs(MODELS_DIR, exist_ok=True)
     torch.save(rnn.state_dict(), os.path.join(MODELS_DIR, "CharRNN.pt"))
+    # Reload the saved weights into a fresh model before scripting, which also checks the file round-trips.
     model = CharRNN(n_letters, 256, len(alldata.labels_uniq))
     model.load_state_dict(torch.load(os.path.join(MODELS_DIR, "CharRNN.pt"), weights_only=True))
     model.eval()
+    # TorchScript compiles the model into a standalone graph the app can load without this code.
     torch.jit.script(model).save(os.path.join(MODELS_DIR, "CharRNN_scripted.pt"))
     json.dump(alldata.labels_uniq, open(os.path.join(MODELS_DIR, "labels.json"), "w"))
 
