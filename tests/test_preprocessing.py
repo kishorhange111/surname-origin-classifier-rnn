@@ -1,4 +1,5 @@
 """Name cleaning, one-hot encoding and label decoding."""
+
 import pytest
 import torch
 
@@ -17,20 +18,23 @@ def test_vocabulary_is_32_symbols():
     assert len(set(allowed_characters)) == 32
 
 
-@pytest.mark.parametrize("raw,clean", [
-    ("müller", "muller"),          # accent stripped
-    ("josé", "jose"),
-    ("o'neil", "o'neil"),          # apostrophe is in the vocabulary
-    ("van der berg", "van der berg"),
-    ("smith-jones", "smithjones"), # hyphen is not
-    ("nguyen2", "nguyen"),         # digits dropped
-    ("", ""),
-    ("Müller", "muller"),          # capitals are lower-cased, not dropped
-    ("NAKAMURA", "nakamura"),
-    ("O'Brien", "o'brien"),
-    ("Ångström", "angstrom"),
-    ("ÉLODIE", "elodie"),          # upper-case accented letter
-])
+@pytest.mark.parametrize(
+    "raw,clean",
+    [
+        ("müller", "muller"),  # accent stripped
+        ("josé", "jose"),
+        ("o'neil", "o'neil"),  # apostrophe is in the vocabulary
+        ("van der berg", "van der berg"),
+        ("smith-jones", "smithjones"),  # hyphen is not
+        ("nguyen2", "nguyen"),  # digits dropped
+        ("", ""),
+        ("Müller", "muller"),  # capitals are lower-cased, not dropped
+        ("NAKAMURA", "nakamura"),
+        ("O'Brien", "o'brien"),
+        ("Ångström", "angstrom"),
+        ("ÉLODIE", "elodie"),  # upper-case accented letter
+    ],
+)
 def test_unicode_to_ascii(raw, clean):
     assert unicode_to_ascii(raw) == clean
 

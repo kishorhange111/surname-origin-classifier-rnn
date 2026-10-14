@@ -1,4 +1,5 @@
 """SurnamesDataset: file discovery, deterministic labels and encoding."""
+
 import torch
 
 from surname_classifier.dataset import SurnamesDataset, stratified_split

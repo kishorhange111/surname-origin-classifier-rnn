@@ -53,7 +53,7 @@ def classification_report(y_true, y_pred, labels):
     per_class = {}
     for i, label in enumerate(labels):
         tp = cm[i][i]
-        support = sum(cm[i])                       # true examples of class i (row sum)
+        support = sum(cm[i])  # true examples of class i (row sum)
         predicted = sum(cm[r][i] for r in range(n))  # predictions of class i (column sum)
         precision = _safe_div(tp, predicted)
         recall = _safe_div(tp, support)
@@ -98,8 +98,7 @@ def plot_confusion_matrix(cm, labels, path, title="Confusion matrix (row-normali
     for i, row in enumerate(norm):
         for j, v in enumerate(row):
             if v >= 0.005:  # skip empty cells to keep the plot readable
-                ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=7,
-                        color="white" if v > 0.5 else "black")
+                ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=7, color="white" if v > 0.5 else "black")
     fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     fig.tight_layout()
     fig.savefig(path, dpi=120)

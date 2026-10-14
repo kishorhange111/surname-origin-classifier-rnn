@@ -1,4 +1,5 @@
 """Smoke tests of the Streamlit UI with the real shipped model (no network needed)."""
+
 from pathlib import Path
 
 import pytest

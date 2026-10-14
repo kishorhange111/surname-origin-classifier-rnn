@@ -1,4 +1,5 @@
 """Shared fixtures: a tiny on-disk surnames dataset, so no test downloads the real one."""
+
 import json
 from pathlib import Path
 
@@ -10,8 +11,24 @@ RESULTS_DIR = ROOT / "results"
 
 # The 18 languages of the dataset (README), in sorted order.
 LANGUAGES = [
-    "Arabic", "Chinese", "Czech", "Dutch", "English", "French", "German", "Greek", "Irish",
-    "Italian", "Japanese", "Korean", "Polish", "Portuguese", "Russian", "Scottish", "Spanish", "Vietnamese",
+    "Arabic",
+    "Chinese",
+    "Czech",
+    "Dutch",
+    "English",
+    "French",
+    "German",
+    "Greek",
+    "Irish",
+    "Italian",
+    "Japanese",
+    "Korean",
+    "Polish",
+    "Portuguese",
+    "Russian",
+    "Scottish",
+    "Spanish",
+    "Vietnamese",
 ]
 
 

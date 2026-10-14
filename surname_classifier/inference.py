@@ -5,6 +5,7 @@ The app does not import CharRNN at all. It loads the TorchScript file, a
 self-contained, serialised graph of the model, which is what makes the
 serving code independent of the training code.
 """
+
 import json
 import os
 

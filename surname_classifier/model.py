@@ -13,6 +13,7 @@ expects during training).
 
     (len, 1, 32) one-hot --RNN(256)--> h_T (1, 256) --Linear--> (1, 128) --Linear--> (1, 18) --LogSoftmax
 """
+
 import torch.nn as nn
 
 

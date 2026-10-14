@@ -11,6 +11,7 @@ name one character at a time, so each character becomes a vector:
 The middle dimension is a batch of size 1, which is the layout nn.RNN
 expects by default (sequence first).
 """
+
 import string
 import unicodedata
 
@@ -39,10 +40,10 @@ def unicode_to_ascii(s):
     Returns:
         The cleaned string (possibly empty, e.g. for "123").
     """
-    return ''.join(
-        c for c in unicodedata.normalize('NFD', s.lower())
-        if unicodedata.category(c) != 'Mn'
-        and c in allowed_characters
+    return "".join(
+        c
+        for c in unicodedata.normalize("NFD", s.lower())
+        if unicodedata.category(c) != "Mn" and c in allowed_characters
     )
 
 

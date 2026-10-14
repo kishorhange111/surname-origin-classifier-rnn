@@ -13,6 +13,7 @@ stratified_split() makes the held-out test set: the classes are very
 imbalanced (Russian has ~9k names, Vietnamese ~70), and a plain random split
 could leave the rarest languages with almost no test examples.
 """
+
 import glob
 import os
 import random
@@ -46,11 +47,11 @@ class SurnamesDataset(Dataset):
         self.labels = []
         self.labels_tensors = []
 
-        text_files = glob.glob(os.path.join(data_dir, '*.txt'))
+        text_files = glob.glob(os.path.join(data_dir, "*.txt"))
         for filename in text_files:
             label = os.path.splitext(os.path.basename(filename))[0]  # "Japanese.txt" -> "Japanese"
             labels_set.add(label)
-            lines = open(filename, encoding='utf-8').read().strip().split('\n')
+            lines = open(filename, encoding="utf-8").read().strip().split("\n")
             for name in lines:
                 clean_name = unicode_to_ascii(name)
                 self.data.append(clean_name)
@@ -92,7 +93,7 @@ def stratified_split(labels, test_fraction, seed):
         by_class[label].append(i)
     rng = random.Random(seed)
     train_idx, test_idx = [], []
-    for label in sorted(by_class):          # sorted: iteration order must not depend on hashing
+    for label in sorted(by_class):  # sorted: iteration order must not depend on hashing
         idx = by_class[label]
         rng.shuffle(idx)
         n_test = round(len(idx) * test_fraction)

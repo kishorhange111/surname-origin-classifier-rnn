@@ -1,4 +1,5 @@
 """Accuracy / precision / recall / F1 and the confusion-matrix plot."""
+
 import pytest
 
 from surname_classifier.metrics import classification_report, confusion_matrix, plot_confusion_matrix

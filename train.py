@@ -13,6 +13,7 @@ Writes models/CharRNN.pt (weights), models/CharRNN_scripted.pt (TorchScript, use
 models/labels.json (the label order the model was trained with), results/metrics.json and
 results/confusion_matrix.png.
 """
+
 import argparse
 import json
 import os
@@ -34,8 +35,7 @@ MODELS_DIR = os.path.join(ROOT, "models")
 RESULTS_DIR = os.path.join(ROOT, "results")
 
 
-def train(model, training_data, n_epoch=10, n_batch_size=64, report_every=50, learning_rate=0.2,
-          criterion=None):
+def train(model, training_data, n_epoch=10, n_batch_size=64, report_every=50, learning_rate=0.2, criterion=None):
     """Mini-batch SGD with gradient clipping.
 
     Names have different lengths, so instead of padding them into one tensor
@@ -127,8 +127,10 @@ def evaluate(model, testing_data, classes):
     print(f"{'language':<12} {'prec':>6} {'recall':>6} {'f1':>6} {'n':>5}")
     for label, m in report["per_class"].items():
         print(f"{label:<12} {m['precision']:6.3f} {m['recall']:6.3f} {m['f1']:6.3f} {m['support']:5d}")
-    print(f"test accuracy: {report['accuracy']:.1%}   macro F1: {report['macro_f1']:.3f}   "
-          f"weighted F1: {report['weighted_f1']:.3f}")
+    print(
+        f"test accuracy: {report['accuracy']:.1%}   macro F1: {report['macro_f1']:.3f}   "
+        f"weighted F1: {report['weighted_f1']:.3f}"
+    )
     return report
 
 
@@ -193,16 +195,26 @@ def main():
             "largest_class_share": max(counts.values()) / len(alldata),
         },
         "training": {
-            "epochs": args.epochs, "batch_size": 64, "learning_rate": 0.15, "hidden_size": 256,
-            "test_fraction": args.test_fraction, "seed": args.seed, "device": str(device),
-            "train_seconds": round(train_seconds), "final_epoch_loss": losses[-1] if losses else None,
+            "epochs": args.epochs,
+            "batch_size": 64,
+            "learning_rate": 0.15,
+            "hidden_size": 256,
+            "test_fraction": args.test_fraction,
+            "seed": args.seed,
+            "device": str(device),
+            "train_seconds": round(train_seconds),
+            "final_epoch_loss": losses[-1] if losses else None,
             "torch_version": torch.__version__,
         },
     }
     with open(os.path.join(RESULTS_DIR, "metrics.json"), "w") as f:
         json.dump(metrics, f, indent=2)
-    plot_confusion_matrix(report["confusion_matrix"], classes, os.path.join(RESULTS_DIR, "confusion_matrix.png"),
-                          title=f"Test-set confusion matrix (row-normalised), accuracy {report['accuracy']:.1%}")
+    plot_confusion_matrix(
+        report["confusion_matrix"],
+        classes,
+        os.path.join(RESULTS_DIR, "confusion_matrix.png"),
+        title=f"Test-set confusion matrix (row-normalised), accuracy {report['accuracy']:.1%}",
+    )
 
     print("example:", label_from_output(model(line_to_tensor(unicode_to_ascii("Nakamura"))), classes))
 

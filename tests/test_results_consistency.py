@@ -3,6 +3,7 @@
 Guards against the README drifting from the measured results (a typo, or a
 retrain whose numbers were not copied over).
 """
+
 import json
 import re
 
@@ -35,6 +36,8 @@ def test_headline_numbers_match():
 def test_per_class_table_row_matches(label):
     m = TEST["per_class"][label]
     names = METRICS["data"]["names_per_language"][label]
-    row = rf"\|\s*{label}\s*\|\s*{names:,}\s*\|\s*{m['support']}\s*\|\s*{m['precision']:.3f}\s*\|" \
-          rf"\s*{m['recall']:.3f}\s*\|\s*{m['f1']:.3f}\s*\|"
+    row = (
+        rf"\|\s*{label}\s*\|\s*{names:,}\s*\|\s*{m['support']}\s*\|\s*{m['precision']:.3f}\s*\|"
+        rf"\s*{m['recall']:.3f}\s*\|\s*{m['f1']:.3f}\s*\|"
+    )
     assert re.search(row, README), f"README row for {label} does not match metrics.json"

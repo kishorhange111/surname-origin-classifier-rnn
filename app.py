@@ -7,6 +7,7 @@ surname_classifier/inference.py, where they are unit-tested.
 
 Run:  streamlit run app.py
 """
+
 import os
 
 import streamlit as st
@@ -62,5 +63,5 @@ st.markdown(
         Made with ❤️ By Kishor | © 2025 Kishor
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )

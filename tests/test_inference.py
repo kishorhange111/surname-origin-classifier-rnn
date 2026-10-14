@@ -1,4 +1,5 @@
 """Model loading (labels.json is required) and prediction."""
+
 import json
 import shutil
 

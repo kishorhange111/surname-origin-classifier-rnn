@@ -1,4 +1,5 @@
 """CharRNN shapes, outputs and TorchScript export, plus the shipped model files."""
+
 import torch
 
 from surname_classifier.model import CharRNN
