@@ -72,3 +72,14 @@ def test_stratified_split_is_seeded():
     labels = make_labels()
     assert stratified_split(labels, 0.2, seed=7) == stratified_split(labels, 0.2, seed=7)
     assert stratified_split(labels, 0.2, seed=7) != stratified_split(labels, 0.2, seed=8)
+
+
+def test_duplicates_removed_and_groups_never_split(tmp_path):
+    (tmp_path / "Arabic.txt").write_text("Nader\nNader\nHaddad\nNader\nSaliba\n", encoding="utf-8")
+    (tmp_path / "English.txt").write_text("Smith\nNader\nJones\n", encoding="utf-8")
+    ds = SurnamesDataset(str(tmp_path))
+    assert ds.duplicates_removed == 2 and len(ds) == 6
+    for seed in range(20):
+        train, test = stratified_split(ds.labels, 0.4, seed=seed, groups=ds.data)
+        assert sorted(train + test) == list(range(len(ds)))
+        assert not {ds.data[i] for i in train} & {ds.data[i] for i in test}  # "Nader" is on one side only

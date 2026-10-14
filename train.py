@@ -154,10 +154,11 @@ def main():
 
     alldata = SurnamesDataset(args.data)
     classes = alldata.labels_uniq
-    print(f"loaded {len(alldata)} items of data")
+    print(f"loaded {len(alldata)} distinct names ({alldata.duplicates_removed} duplicate lines removed)")
     # Stratified, seeded split: every language keeps the same share in the held-out test set, and the
     # same names land there on every run. The test set is used once, after training.
-    train_idx, test_idx = stratified_split(alldata.labels, args.test_fraction, args.seed)
+    # groups=names: a name listed under two languages never appears on both sides of the split.
+    train_idx, test_idx = stratified_split(alldata.labels, args.test_fraction, args.seed, groups=alldata.data)
     train_set, test_set = Subset(alldata, train_idx), Subset(alldata, test_idx)
     print(f"train examples = {len(train_set)}, test examples = {len(test_set)}")
 
@@ -189,6 +190,7 @@ def main():
         "test": report,
         "data": {
             "total_names": len(alldata),
+            "duplicate_lines_removed": alldata.duplicates_removed,
             "train_names": len(train_set),
             "test_names": len(test_set),
             "names_per_language": counts,

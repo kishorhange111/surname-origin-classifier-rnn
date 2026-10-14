@@ -9,40 +9,42 @@
 The task: *Nakamura* is a Japanese surname and *Rossi* an Italian one. Can a model learn that from spelling alone?
 
 ## Results
-Held-out, stratified test set: **3,009 names** (15 % of every language, seed 2024), never seen during training.
+Held-out, stratified test set: **2,698 names** (15 % of every language, seed 2024). Duplicates are removed before the split, and a name listed under two languages always lands on one side only, so **no test name was seen during training**.
 
 | Metric | Test set |
 |---|---|
-| Accuracy | **78.1 %** |
-| Macro F1 (every language weighted equally) | **0.408** |
-| Weighted F1 (weighted by language size) | 0.769 |
-| Majority-class baseline (always "Russian") accuracy | 46.8 % |
+| Accuracy | **75.5 %** |
+| Macro F1 (every language weighted equally) | **0.371** |
+| Weighted F1 (weighted by language size) | 0.741 |
+| Majority-class baseline (always "Russian") accuracy | 51.9 % |
 
-The data is **heavily imbalanced**: Russian is 46.8 % of all 20,050 names, while Vietnamese and Portuguese have fewer than 75 each. That is why macro F1 is reported next to accuracy: accuracy is dominated by the big classes, macro F1 shows how the model does on every language. The large, distinctive classes (Arabic, Russian, Japanese) are learned well; small classes whose names look English, Italian or Chinese to a character model (Scottish, Portuguese, Vietnamese) are not recognised at all.
+**A data-leakage fix lowered these numbers, on purpose.** The raw files repeat names: Arabic.txt has 2,000 lines but only 108 distinct names, so before deduplication almost every Arabic test name also appeared in training, and the model scored 0.969 F1 on Arabic by memorising them. After removing 2,058 duplicate lines, Arabic F1 is 0.105, overall accuracy went from 78.1 % to 75.5 % and macro F1 from 0.408 to 0.371. The lower numbers are the honest ones: they measure generalisation to unseen names.
+
+The data is **heavily imbalanced**: Russian is 51.9 % of the 17,992 distinct names, while Vietnamese, Portuguese and Scottish have under 100 each. That is why macro F1 is reported next to accuracy: accuracy is dominated by the big classes, macro F1 shows how the model does on every language. Large, distinctive classes (Russian, Japanese, English, Italian) are learned well; small classes whose names look English, Italian or Chinese to a character model (Scottish, Portuguese, Vietnamese) are barely recognised. Class weighting or oversampling is the obvious next step.
 
 <details>
 <summary>Per-language results (test set)</summary>
 
 | Language | Names in dataset | Test names | Precision | Recall | F1 |
 |---|---|---|---|---|---|
-| Arabic | 2,000 | 300 | 0.949 | 0.990 | 0.969 |
-| Chinese | 268 | 40 | 0.547 | 0.725 | 0.624 |
-| Czech | 519 | 78 | 0.357 | 0.256 | 0.299 |
-| Dutch | 297 | 45 | 0.524 | 0.244 | 0.333 |
-| English | 3,668 | 550 | 0.624 | 0.842 | 0.717 |
-| French | 277 | 42 | 0.421 | 0.190 | 0.262 |
-| German | 724 | 109 | 0.395 | 0.275 | 0.324 |
-| Greek | 203 | 30 | 0.727 | 0.533 | 0.615 |
-| Irish | 232 | 35 | 0.500 | 0.200 | 0.286 |
-| Italian | 709 | 106 | 0.503 | 0.811 | 0.621 |
-| Japanese | 991 | 149 | 0.864 | 0.765 | 0.811 |
-| Korean | 94 | 14 | 0.200 | 0.071 | 0.105 |
-| Polish | 139 | 21 | 0.333 | 0.095 | 0.148 |
+| Arabic | 108 | 16 | 0.333 | 0.062 | 0.105 |
+| Chinese | 246 | 37 | 0.528 | 0.514 | 0.521 |
+| Czech | 502 | 75 | 0.357 | 0.267 | 0.305 |
+| Dutch | 286 | 43 | 0.311 | 0.326 | 0.318 |
+| English | 3,668 | 551 | 0.679 | 0.737 | 0.707 |
+| French | 273 | 38 | 0.286 | 0.053 | 0.089 |
+| German | 690 | 101 | 0.315 | 0.446 | 0.369 |
+| Greek | 193 | 29 | 0.654 | 0.586 | 0.618 |
+| Irish | 226 | 37 | 0.353 | 0.162 | 0.222 |
+| Italian | 701 | 105 | 0.670 | 0.695 | 0.682 |
+| Japanese | 990 | 148 | 0.830 | 0.824 | 0.827 |
+| Korean | 94 | 13 | 0.750 | 0.231 | 0.353 |
+| Polish | 138 | 23 | 0.400 | 0.174 | 0.242 |
 | Portuguese | 74 | 11 | 0.000 | 0.000 | 0.000 |
-| Russian | 9,384 | 1408 | 0.936 | 0.890 | 0.913 |
-| Scottish | 100 | 15 | 0.000 | 0.000 | 0.000 |
-| Spanish | 298 | 45 | 0.387 | 0.267 | 0.316 |
-| Vietnamese | 73 | 11 | 0.000 | 0.000 | 0.000 |
+| Russian | 9,340 | 1403 | 0.888 | 0.922 | 0.905 |
+| Scottish | 100 | 18 | 0.000 | 0.000 | 0.000 |
+| Spanish | 293 | 39 | 0.294 | 0.256 | 0.274 |
+| Vietnamese | 70 | 11 | 0.250 | 0.091 | 0.133 |
 
 </details>
 
@@ -56,8 +58,8 @@ All numbers come from [`results/metrics.json`](results/metrics.json), written by
 | Input | surname, one character at a time, one-hot over a 32-symbol vocabulary |
 | Model | single-layer RNN (hidden 256) → Linear 256→128 → Linear 128→18 → LogSoftmax |
 | Classes | 18 languages: Arabic, Chinese, Czech, Dutch, English, French, German, Greek, Irish, Italian, Japanese, Korean, Polish, Portuguese, Russian, Scottish, Spanish, Vietnamese |
-| Data | 20,050 names, stratified 85/15 train/test split (seed 2024) |
-| Training | mini-batches of 64, SGD (lr 0.15) with gradient clipping, NLL loss, 27 epochs (7 min on CPU) |
+| Data | 17,992 distinct names (after removing 2,058 duplicate lines), stratified 85/15 train/test split grouped by name (seed 2024) |
+| Training | mini-batches of 64, SGD (lr 0.15) with gradient clipping, NLL loss, 27 epochs (11 min on CPU) |
 | Serving | TorchScript (`models/CharRNN_scripted.pt`), Streamlit |
 
 ## How it works
@@ -137,11 +139,11 @@ The suite runs on CPU with no downloads. It covers name cleaning and one-hot enc
 - **Why TorchScript?** A serialised, self-contained graph: the serving code doesn't need the training code, and the same file can be loaded from C++.
 
 ## Limitations
-- **Class imbalance.** Unweighted training on data that is 46.8 % Russian: small languages are under-predicted, and Portuguese, Scottish and Vietnamese get an F1 of 0 on the test set. Class-weighted loss or oversampling would be the first thing to try.
+- **Class imbalance.** Unweighted training on data that is 51.9 % Russian: small languages are under-predicted, and Portuguese and Scottish get an F1 of 0 on the test set. Class-weighted loss or oversampling would be the first thing to try.
 - **Ambiguous labels.** Many surnames are shared across languages (and Scottish, Irish and English names overlap heavily), so a single "origin" label is inherently uncertain.
 - **Small test sets for rare languages.** Some languages have only 11–15 test names, so their per-language scores are noisy.
 - **Simple model.** A vanilla RNN, one name per step and no padding/packing; an LSTM/GRU or a small transformer would likely do better.
-- **Data copy.** `download.pytorch.org` was not reachable when this model was trained, so the PyTorch tutorial's `data/names` files were taken from the copy in [spro/practical-pytorch](https://github.com/spro/practical-pytorch/tree/master/data/names) (20,050 names).
+- **Data copy.** `download.pytorch.org` was not reachable when this model was trained, so the PyTorch tutorial's `data/names` files were taken from the copy in [spro/practical-pytorch](https://github.com/spro/practical-pytorch/tree/master/data/names) (20,050 lines, 17,992 distinct names per language).
 
 ## Tech stack
 Python · PyTorch · TorchScript · Streamlit · NumPy · pytest · ruff · GitHub Actions
