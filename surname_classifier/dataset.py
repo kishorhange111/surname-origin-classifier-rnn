@@ -8,9 +8,15 @@ PyTorch Dataset for the surnames data: one text file per language, one surname p
 
 Every name is cleaned and one-hot encoded once, up front, so training epochs
 only index into ready-made tensors.
+
+stratified_split() makes the held-out test set: the classes are very
+imbalanced (Russian has ~9k names, Vietnamese ~70), and a plain random split
+could leave the rarest languages with almost no test examples.
 """
 import glob
 import os
+import random
+from collections import defaultdict
 
 import torch
 from torch.utils.data import Dataset
@@ -66,3 +72,32 @@ class SurnamesDataset(Dataset):
     def __getitem__(self, idx):
         """Return (label_tensor, name_tensor, label, name) for one surname."""
         return self.labels_tensors[idx], self.data_tensors[idx], self.labels[idx], self.data[idx]
+
+
+def stratified_split(labels, test_fraction, seed):
+    """Split example indices so every class keeps the same train/test proportion.
+
+    Args:
+        labels: the class label of every example (any hashable values).
+        test_fraction: share of each class that goes to the test set, in (0, 1).
+        seed: RNG seed, so the split is identical on every run.
+
+    Returns:
+        (train_idx, test_idx): sorted lists of indices that together cover
+        every example exactly once. Each class with at least 2 examples puts
+        at least 1 in test and at least 1 in train.
+    """
+    by_class = defaultdict(list)
+    for i, label in enumerate(labels):
+        by_class[label].append(i)
+    rng = random.Random(seed)
+    train_idx, test_idx = [], []
+    for label in sorted(by_class):          # sorted: iteration order must not depend on hashing
+        idx = by_class[label]
+        rng.shuffle(idx)
+        n_test = round(len(idx) * test_fraction)
+        if len(idx) >= 2:
+            n_test = min(max(n_test, 1), len(idx) - 1)
+        test_idx += idx[:n_test]
+        train_idx += idx[n_test:]
+    return sorted(train_idx), sorted(test_idx)

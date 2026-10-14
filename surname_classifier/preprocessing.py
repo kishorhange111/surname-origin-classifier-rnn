@@ -16,12 +16,6 @@ import unicodedata
 
 import torch
 
-# Label order used by the shipped model in models/. Retraining writes the order it used to models/labels.json,
-# which the app prefers over this list.
-LABELS = ['Dutch', 'Arabic', 'German', 'Japanese', 'Irish', 'Polish', 'Korean', 'French', 'Greek', 'Portuguese',
-          'Vietnamese', 'Russian', 'Czech', 'Chinese', 'Spanish', 'Scottish', 'English', 'Italian']
-alldata = LABELS  # backwards-compatible name
-
 # The 32-symbol vocabulary. "_" doubles as the "unknown character" slot.
 allowed_characters = string.ascii_lowercase + " .,;'" + "_"
 n_letters = len(allowed_characters)
@@ -30,23 +24,23 @@ n_letters = len(allowed_characters)
 def unicode_to_ascii(s):
     """Normalise a name to the model's vocabulary.
 
-    NFD normalisation splits an accented letter into base letter + combining
-    mark ("é" -> "e" + "́"); dropping the marks (Unicode category "Mn")
-    strips the accents. Characters outside the vocabulary are dropped.
+    Steps, in order:
+      1. lower-case ("Müller" -> "müller"), so capitals are kept as letters;
+      2. NFD normalisation splits an accented letter into base letter +
+         combining mark ("ü" -> "u" + "\u0308");
+      3. drop the combining marks (Unicode category "Mn") and any character
+         outside the vocabulary.
 
-    Note: the vocabulary check runs on the character *before* it is
-    lower-cased, so upper-case letters are dropped rather than lower-cased
-    ("Müller" -> "uller"). The shipped model was trained with exactly this
-    function, so it is kept as-is; changing it means retraining the model.
+    Example: "Müller" -> "muller", "O'Brien" -> "o'brien".
 
     Args:
         s: the raw surname.
 
     Returns:
-        The cleaned string (possibly empty).
+        The cleaned string (possibly empty, e.g. for "123").
     """
     return ''.join(
-        c.lower() for c in unicodedata.normalize('NFD', s)
+        c for c in unicodedata.normalize('NFD', s.lower())
         if unicodedata.category(c) != 'Mn'
         and c in allowed_characters
     )

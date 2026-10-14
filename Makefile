@@ -13,7 +13,7 @@ data:           ## download the surnames dataset into data/names/
 	curl -O https://download.pytorch.org/tutorial/data.zip && unzip -o data.zip
 
 train:
-	python train.py --data data/names --epochs 27
+	python train.py --data data/names --epochs 27 --seed 2024
 
 lint:
 	ruff check .

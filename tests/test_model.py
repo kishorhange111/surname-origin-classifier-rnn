@@ -2,9 +2,9 @@
 import torch
 
 from surname_classifier.model import CharRNN
-from surname_classifier.preprocessing import LABELS, line_to_tensor, n_letters, unicode_to_ascii
+from surname_classifier.preprocessing import line_to_tensor, n_letters, unicode_to_ascii
 
-from .conftest import MODELS_DIR
+from .conftest import MODELS_DIR, shipped_labels
 
 
 def test_output_is_log_probabilities():
@@ -33,12 +33,12 @@ def test_torchscript_export_matches_eager(tmp_path):
 
 def test_shipped_weights_load_into_charrnn():
     state = torch.load(MODELS_DIR / "CharRNN.pt", weights_only=True)
-    model = CharRNN(n_letters, 256, len(LABELS))
+    model = CharRNN(n_letters, 256, len(shipped_labels()))
     model.load_state_dict(state)  # raises on any missing key or shape mismatch
 
 
 def test_shipped_torchscript_matches_shipped_weights():
-    eager = CharRNN(n_letters, 256, len(LABELS))
+    eager = CharRNN(n_letters, 256, len(shipped_labels()))
     eager.load_state_dict(torch.load(MODELS_DIR / "CharRNN.pt", weights_only=True))
     eager.eval()
     scripted = torch.jit.load(str(MODELS_DIR / "CharRNN_scripted.pt")).eval()

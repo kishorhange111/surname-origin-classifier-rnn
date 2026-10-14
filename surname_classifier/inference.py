@@ -10,33 +10,43 @@ import os
 
 import torch
 
-from .preprocessing import LABELS, label_from_output, line_to_tensor, unicode_to_ascii
+from .preprocessing import label_from_output, line_to_tensor, unicode_to_ascii
 
 SCRIPTED_MODEL = "CharRNN_scripted.pt"
 LABELS_FILE = "labels.json"
+
+
+def load_labels(models_dir):
+    """Read the label order the model was trained with.
+
+    Args:
+        models_dir: folder containing labels.json (written by train.py).
+
+    Returns:
+        List of language names; position i is the name of output unit i.
+
+    Raises:
+        FileNotFoundError: if labels.json is missing. There is deliberately no
+            built-in fallback list: a guessed order silently mislabels every
+            prediction.
+    """
+    with open(os.path.join(models_dir, LABELS_FILE)) as f:
+        return json.load(f)
 
 
 def load_model(models_dir):
     """Load the TorchScript model and the label order it was trained with.
 
     Args:
-        models_dir: folder with CharRNN_scripted.pt and, after a retrain,
-            labels.json.
+        models_dir: folder with CharRNN_scripted.pt and labels.json.
 
     Returns:
         (model, labels): the model in eval mode, and the language names in
-        output-unit order. labels.json (written by train.py) wins over the
-        built-in LABELS list, so a retrained model always gets its own order.
+        output-unit order (from labels.json).
     """
     model = torch.jit.load(os.path.join(models_dir, SCRIPTED_MODEL))
     model.eval()
-    labels_file = os.path.join(models_dir, LABELS_FILE)
-    if os.path.exists(labels_file):
-        with open(labels_file) as f:
-            labels = json.load(f)
-    else:
-        labels = LABELS
-    return model, labels
+    return model, load_labels(models_dir)
 
 
 def predict(model, surname, labels):

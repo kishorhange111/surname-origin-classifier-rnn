@@ -3,7 +3,6 @@ import pytest
 import torch
 
 from surname_classifier.preprocessing import (
-    LABELS,
     allowed_characters,
     label_from_output,
     letter_to_index,
@@ -26,16 +25,14 @@ def test_vocabulary_is_32_symbols():
     ("smith-jones", "smithjones"), # hyphen is not
     ("nguyen2", "nguyen"),         # digits dropped
     ("", ""),
+    ("Müller", "muller"),          # capitals are lower-cased, not dropped
+    ("NAKAMURA", "nakamura"),
+    ("O'Brien", "o'brien"),
+    ("Ångström", "angstrom"),
+    ("ÉLODIE", "elodie"),          # upper-case accented letter
 ])
 def test_unicode_to_ascii(raw, clean):
     assert unicode_to_ascii(raw) == clean
-
-
-def test_upper_case_letters_are_dropped_as_trained():
-    # Pinned on purpose: the vocabulary check happens before lower-casing, so capitals are
-    # removed. The shipped model was trained this way; changing it needs a retrain.
-    assert unicode_to_ascii("Müller") == "uller"
-    assert unicode_to_ascii("NAKAMURA") == ""
 
 
 def test_letter_to_index_maps_unknown_to_underscore():
@@ -57,13 +54,7 @@ def test_line_to_tensor_empty():
 
 
 def test_label_from_output_picks_argmax():
-    out = torch.full((1, len(LABELS)), -10.0)
+    labels = ["a", "b", "c", "d", "e"]
+    out = torch.full((1, len(labels)), -10.0)
     out[0, 3] = -0.1
-    assert label_from_output(out, LABELS) == (LABELS[3], 3)
-
-
-def test_labels_cover_the_18_languages_in_the_readme():
-    assert sorted(LABELS) == [
-        "Arabic", "Chinese", "Czech", "Dutch", "English", "French", "German", "Greek", "Irish",
-        "Italian", "Japanese", "Korean", "Polish", "Portuguese", "Russian", "Scottish", "Spanish", "Vietnamese",
-    ]
+    assert label_from_output(out, labels) == ("d", 3)

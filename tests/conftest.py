@@ -1,10 +1,23 @@
 """Shared fixtures: a tiny on-disk surnames dataset, so no test downloads the real one."""
+import json
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 MODELS_DIR = ROOT / "models"
+RESULTS_DIR = ROOT / "results"
+
+# The 18 languages of the dataset (README), in sorted order.
+LANGUAGES = [
+    "Arabic", "Chinese", "Czech", "Dutch", "English", "French", "German", "Greek", "Irish",
+    "Italian", "Japanese", "Korean", "Polish", "Portuguese", "Russian", "Scottish", "Spanish", "Vietnamese",
+]
+
+
+def shipped_labels():
+    """The label order saved next to the shipped model."""
+    return json.loads((MODELS_DIR / "labels.json").read_text())
 
 
 @pytest.fixture
