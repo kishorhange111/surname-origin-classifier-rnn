@@ -9,3 +9,8 @@ python train.py --data data/names
 ```
 
 The data files are not committed to this repository.
+
+The committed model was trained on the copy of these files in
+[spro/practical-pytorch](https://github.com/spro/practical-pytorch/tree/master/data/names)
+(20,050 names), because `download.pytorch.org` was unreachable at the time. Class sizes and
+the train/test split are recorded in `results/metrics.json`.
