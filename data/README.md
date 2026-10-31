@@ -5,7 +5,7 @@ Training uses the surnames dataset from the PyTorch "Classifying Names with a Ch
 ```bash
 curl -O https://download.pytorch.org/tutorial/data.zip
 unzip data.zip            # creates data/names/*.txt
-python train.py --data data/names
+python scripts/train.py --data data/names
 ```
 
 The data files are not committed to this repository.

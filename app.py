@@ -1,9 +1,9 @@
 """
 Streamlit app: type a surname, get the language it most likely comes from.
 
-The model is the TorchScript export written by train.py (models/), so this
+The model is the TorchScript export written by scripts/train.py (models/), so this
 file needs no training code. Loading and prediction live in
-surname_classifier/inference.py, where they are unit-tested.
+src/surname_classifier/inference.py, where they are unit-tested.
 
 Run:  streamlit run app.py
 """
@@ -21,7 +21,7 @@ torch.classes.__path__ = []  # avoids a Streamlit file-watcher crash with torch.
 
 @st.cache_resource
 def load_model():
-    """Load the TorchScript model (and its label order, if saved by train.py) once per server.
+    """Load the TorchScript model (and its label order, if saved by scripts/train.py) once per server.
 
     Returns:
         (model, labels), see inference.load_model.

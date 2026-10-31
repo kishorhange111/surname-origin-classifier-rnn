@@ -1,5 +1,6 @@
-"""train() and evaluate() from train.py on a tiny, separable dataset (CPU, seconds)."""
+"""train() and evaluate() from scripts/train.py on a tiny, separable dataset (CPU, seconds)."""
 
+import importlib.util
 import random
 
 import pytest
@@ -9,7 +10,20 @@ from torch.utils.data import Subset
 from surname_classifier.dataset import SurnamesDataset
 from surname_classifier.model import CharRNN
 from surname_classifier.preprocessing import n_letters
-from train import evaluate, train
+
+from .conftest import ROOT
+
+
+def _load_training_script():
+    """Import scripts/train.py as a module (its main() is guarded, so nothing trains on import)."""
+    spec = importlib.util.spec_from_file_location("train_script", ROOT / "scripts" / "train.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_train_script = _load_training_script()
+evaluate, train = _train_script.evaluate, _train_script.train
 
 
 @pytest.fixture

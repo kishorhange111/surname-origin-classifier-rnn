@@ -50,7 +50,7 @@ The data is **heavily imbalanced**: Russian is 51.9 % of the 17,992 distinct nam
 
 ![Confusion matrix](results/confusion_matrix.png)
 
-All numbers come from [`results/metrics.json`](results/metrics.json), written by `train.py`; a unit test fails if this README and that file disagree.
+All numbers come from [`results/metrics.json`](results/metrics.json), written by [`scripts/train.py`](scripts/train.py); a unit test fails if this README and that file disagree.
 
 ## Model at a glance
 | | |
@@ -65,7 +65,7 @@ All numbers come from [`results/metrics.json`](results/metrics.json), written by
 ## How it works
 ```mermaid
 flowchart LR
-    subgraph Training ["train.py"]
+    subgraph Training ["scripts/train.py"]
         D["data/names/*.txt<br/>one file per language"] --> P1["SurnamesDataset<br/>clean + one-hot encode"]
         P1 --> SP["stratified split<br/>85% train / 15% test"]
         SP --> T["CharRNN<br/>SGD, NLL loss"]
@@ -95,21 +95,23 @@ Or open the repository in **GitHub Codespaces**: the dev container installs ever
 ### Retrain the model
 ```bash
 curl -O https://download.pytorch.org/tutorial/data.zip && unzip data.zip   # data/names/*.txt  (or: make data)
-python train.py --data data/names --epochs 27                              # (or: make train)
+python scripts/train.py --data data/names --epochs 27                      # (or: make train)
 ```
 Training writes the weights, the TorchScript model, `models/labels.json` (the label order used, which the app requires) and the test metrics in `results/`. It is seeded, so a re-run on the same data and torch version reproduces the model. See [`data/README.md`](data/README.md) for the dataset.
 
 ## Project layout
 ```
 surname-origin-classifier-rnn/
-├── app.py                       # Streamlit UI (loads the TorchScript model)
-├── train.py                     # train → evaluate → export models/
-├── surname_classifier/          # the Python package
+├── app.py                       # Streamlit UI (loads the TorchScript model; Streamlit Cloud entry point)
+├── src/surname_classifier/      # the Python package (installable)
 │   ├── preprocessing.py         #   ASCII normalisation, one-hot encoding, label decoding
 │   ├── model.py                 #   CharRNN definition
 │   ├── dataset.py               #   PyTorch Dataset (one .txt file per language), stratified split
 │   ├── metrics.py               #   accuracy, per-class precision/recall/F1, confusion-matrix plot
 │   └── inference.py             #   load the exported model + labels.json, predict
+├── scripts/
+│   ├── train.py                 # train → evaluate → export models/ and results/
+│   └── sync_readme.py           # copy the numbers in results/metrics.json into this README
 ├── models/
 │   ├── CharRNN.pt               # trained weights (state_dict)
 │   ├── CharRNN_scripted.pt      # TorchScript export used by the app
@@ -117,19 +119,20 @@ surname-origin-classifier-rnn/
 ├── results/
 │   ├── metrics.json             # test-set metrics, class counts, training settings
 │   └── confusion_matrix.png
-├── tests/                       # pytest suite (CPU, offline)
 ├── data/README.md               # how to download the training data
+├── tests/                       # pytest suite (CPU, offline)
+├── .github/workflows/ci.yml     # lint + tests on every push and pull request
+├── .devcontainer/               # one-click GitHub Codespaces setup
+├── Makefile                     # make install / run / data / train / lint / test / check
 ├── pyproject.toml               # metadata, ruff + pytest config
-├── requirements.txt             # pinned runtime dependencies
-├── requirements-dev.txt         # pytest, ruff
-├── Makefile                     # make run / data / train / test / check
-└── .devcontainer/               # one-click GitHub Codespaces setup
+├── requirements.txt             # pinned runtime dependencies + this package
+└── requirements-dev.txt         # pytest, ruff
 ```
 
 ## Testing
 ```bash
 pip install -r requirements.txt -r requirements-dev.txt
-make check                       # = ruff check . && pytest
+make check                       # = ruff check . && ruff format --check . && pytest
 ```
 The suite runs on CPU with no downloads. It covers name cleaning and one-hot encoding, deterministic label order and the stratified split, the metric calculations (checked by hand), CharRNN output shapes and log-probabilities, the TorchScript round trip, that the committed TorchScript model matches the committed weights, a short training run on toy data that must reach 100 % accuracy, that the app's labels come from `labels.json`, that the README numbers match `results/metrics.json`, rejection of inputs with no usable characters, and Streamlit `AppTest` smoke tests of the real app. CI runs it on every push and pull request.
 

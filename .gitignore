@@ -7,3 +7,7 @@ data.zip
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
+build/
+dist/
+.coverage
+.env
