@@ -1,4 +1,6 @@
 torch==2.14.1         # version that trained and exported models/
 streamlit==1.44.1
 numpy==2.2.4
-matplotlib==3.10.9   # train.py: confusion-matrix plot
+matplotlib==3.10.9   # scripts/train.py: confusion-matrix plot
+# This repository itself (src/surname_classifier), so app.py and scripts/ can import it.
+-e .

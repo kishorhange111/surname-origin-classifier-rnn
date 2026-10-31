@@ -8,7 +8,7 @@ Pipeline:
   4. test accuracy, per-language precision/recall/F1 and macro F1 (evaluate)
   5. export the weights, a TorchScript model for the app, the label order and the metrics
 
-Usage:  python train.py [--data data/names] [--epochs 27] [--seed 2024] [--test-fraction 0.15]
+Usage:  python scripts/train.py [--data data/names] [--epochs 27] [--seed 2024] [--test-fraction 0.15]
 Writes models/CharRNN.pt (weights), models/CharRNN_scripted.pt (TorchScript, used by app.py),
 models/labels.json (the label order the model was trained with), results/metrics.json and
 results/confusion_matrix.png.
@@ -30,7 +30,7 @@ from surname_classifier.metrics import classification_report, plot_confusion_mat
 from surname_classifier.model import CharRNN
 from surname_classifier.preprocessing import label_from_output, line_to_tensor, n_letters, unicode_to_ascii
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repository root
 MODELS_DIR = os.path.join(ROOT, "models")
 RESULTS_DIR = os.path.join(ROOT, "results")
 

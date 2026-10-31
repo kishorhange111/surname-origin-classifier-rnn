@@ -21,7 +21,7 @@ def load_labels(models_dir):
     """Read the label order the model was trained with.
 
     Args:
-        models_dir: folder containing labels.json (written by train.py).
+        models_dir: folder containing labels.json (written by scripts/train.py).
 
     Returns:
         List of language names; position i is the name of output unit i.
